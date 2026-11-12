@@ -1,6 +1,6 @@
 // Guarda o app no celular para funcionar sem internet.
 // Ao publicar uma nova versão, aumente o número abaixo.
-const CACHE = "rotina-v2";
+const CACHE = "rotina-v3";
 const FILES = [
   "./",
   "./index.html",

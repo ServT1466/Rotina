@@ -3,9 +3,9 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Rotina do Caseiro</title>
+<title>Rotina do Motorista</title>
 <meta name="theme-color" content="#1e6a50">
-<meta name="description" content="Checklist diário do caseiro/motorista com envio do relatório em PDF pelo WhatsApp.">
+<meta name="description" content="Checklist diário do motorista com envio do relatório em PDF pelo WhatsApp.">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icons/icon-192.png">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
@@ -140,7 +140,7 @@ fieldset{border:0;margin:0;padding:0;min-width:0;display:flex;flex-direction:col
 <body>
 <header>
   <div class="wrap">
-    <div class="brand"><h1>Rotina do Caseiro</h1><span class="shift">Seg a sex · 7h às 16h</span></div>
+    <div class="brand"><h1>Rotina do Motorista</h1><span class="shift">Seg a sex · 7h às 16h</span></div>
     <div class="tabs" role="tablist">
       <button class="tab" id="tab-dia" role="tab" aria-selected="true">Dia</button>
       <button class="tab" id="tab-hist" role="tab" aria-selected="false">Histórico</button>
@@ -398,13 +398,13 @@ function persistRot(){if(!store(K_ROT,rotina))toast("Não foi possível salvar a
   renderRot();renderDay()}
 
 /* ---------------- PDF ---------------- */
-function pdfName(r){return"Relatorio_"+(cfg.nome||"caseiro").replace(/[^\wÀ-ú]+/g,"_")+"_"+r.data+".pdf"}
+function pdfName(r){return"Relatorio_"+(cfg.nome||"motorista").replace(/[^\wÀ-ú]+/g,"_")+"_"+r.data+".pdf"}
 function makePdf(r){
   const {jsPDF}=window.jspdf;const doc=new jsPDF({unit:"mm",format:"a4"});
   const G=[30,106,80],W=210,M=14;let y;
   const d=parse(r.data),t=r.tarefas||[],feitas=t.filter(x=>x.feito).length;
   doc.setFillColor(...G);doc.rect(0,0,W,28,"F");
-  doc.setTextColor(255);doc.setFont("helvetica","bold");doc.setFontSize(17);doc.text("Relatório diário – Caseiro / Motorista",M,13);
+  doc.setTextColor(255);doc.setFont("helvetica","bold");doc.setFontSize(17);doc.text("Relatório diário – Motorista",M,13);
   doc.setFont("helvetica","normal");doc.setFontSize(11);doc.text(WD[d.getDay()]+", "+br(r.data)+"   ·   "+(cfg.nome||""),M,21);
   doc.setTextColor(30);y=38;doc.setFontSize(10.5);
   doc.text("Funcionário: "+(cfg.nome||"-"),M,y);doc.text("Para: "+(cfg.destinatario||"-"),W/2,y);y+=6;
@@ -427,7 +427,7 @@ function makePdf(r){
   if(e.length){title("Atividades extras");doc.autoTable(Object.assign({},base,{startY:y,head:[["Atividade","Tipo","Status","Observação"]],body:e.map(x=>[x.nome,x.tipo||"",x.feito?"Feito":"—",x.obs||""]),columnStyles:{0:{cellWidth:62},1:{cellWidth:24},2:{cellWidth:20}}}));y=doc.lastAutoTable.finalY}
   title("Observações do dia");y+=4;doc.setFont("helvetica","normal");doc.setFontSize(10);
   doc.splitTextToSize(r.obsGeral||"Sem observações.",W-2*M).forEach(l=>{if(y>282){doc.addPage();y=20}doc.text(l,M,y);y+=5});
-  const n=doc.getNumberOfPages();for(let i=1;i<=n;i++){doc.setPage(i);doc.setFontSize(8);doc.setTextColor(120);doc.text("Rotina do Caseiro · página "+i+" de "+n,W-M,292,{align:"right"})}
+  const n=doc.getNumberOfPages();for(let i=1;i<=n;i++){doc.setPage(i);doc.setFontSize(8);doc.setTextColor(120);doc.text("Rotina do Motorista · página "+i+" de "+n,W-M,292,{align:"right"})}
   return doc.output("blob");
 }
 

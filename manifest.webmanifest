@@ -1,7 +1,7 @@
 {
-  "name": "Rotina do Caseiro",
+  "name": "Rotina do Motorista",
   "short_name": "Rotina",
-  "description": "Checklist diário do caseiro/motorista com envio do relatório em PDF pelo WhatsApp.",
+  "description": "Checklist diário do motorista com envio do relatório em PDF pelo WhatsApp.",
   "lang": "pt-BR",
   "start_url": "./",
   "scope": "./",

@@ -1,4 +1,4 @@
-ROTINA DO CASEIRO — app para celular (Android e iPhone)
+ROTINA DO MOTORISTA — app para celular (Android e iPhone)
 =======================================================
 
 O que o app faz
@@ -16,7 +16,7 @@ O celular só instala o app a partir de um endereço https. O jeito mais simples
   a. Descompacte este .zip no computador (vai aparecer a pasta "rotina-app").
   b. Entre em https://app.netlify.com/drop e crie uma conta grátis (e-mail ou Google).
   c. Arraste a pasta "rotina-app" inteira para a página.
-  d. O Netlify gera um endereço, por exemplo: https://rotina-caseiro.netlify.app
+  d. O Netlify gera um endereço, por exemplo: https://rotina-motorista.netlify.app
      (em "Site configuration > Change site name" dá para escolher o nome).
   e. Mande esse endereço para o celular do Paulino.
 
@@ -70,7 +70,7 @@ A rotina fica guardada no celular onde foi editada. Faça as mudanças no celula
   - O app no celular se atualiza sozinho na próxima vez que abrir com internet
     (às vezes é preciso fechar e abrir o app duas vezes).
   - Relatórios, rotina e ajustes já guardados no celular são mantidos.
-  - Se você mesmo editar os arquivos, troque o número em sw.js (rotina-v2 -> rotina-v3).
+  - Se você mesmo editar os arquivos, troque o número em sw.js (rotina-v3 -> rotina-v4).
 
 
 Observações

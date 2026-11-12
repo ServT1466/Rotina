@@ -1,0 +1,513 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Rotina do Caseiro</title>
+<meta name="theme-color" content="#1e6a50">
+<meta name="description" content="Checklist diário do caseiro/motorista com envio do relatório em PDF pelo WhatsApp.">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Rotina">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<style>
+/* Uma coluna para o celular; abas Dia / Histórico / Rotina / Ajustes; envio do PDF no fim do dia */
+:root{
+  --bg:#f2f5f1; --surface:#ffffff; --ink:#1b2420; --muted:#5b6a62; --line:#dbe2dc;
+  --accent:#1e6a50; --accent-ink:#ffffff; --accent-soft:#e1eee7;
+  --warn:#9a5a00; --warn-soft:#fbefdb; --danger:#b3261e;
+  --font:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){:root{
+  --bg:#111613; --surface:#19201c; --ink:#e5ece7; --muted:#9aa89f; --line:#2a352f;
+  --accent:#5fc59d; --accent-ink:#0b1912; --accent-soft:#1c3328;
+  --warn:#f0b45c; --warn-soft:#352914; --danger:#ff8a80; color-scheme:dark}}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.45 var(--font);padding-bottom:env(safe-area-inset-bottom,0px)}
+[hidden]{display:none!important}
+.wrap{max-width:640px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+header{position:sticky;top:0;z-index:5;background:var(--surface);border-bottom:1px solid var(--line);padding-top:env(safe-area-inset-top,0px)}
+header .wrap{padding-block:12px 0;display:flex;flex-direction:column;gap:8px}
+.brand{display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap}
+h1{font-weight:800;font-size:20px;margin:0;letter-spacing:-.01em}
+.shift{font-size:12px;color:var(--muted);letter-spacing:.04em;text-transform:uppercase}
+.tabs{display:flex}
+.tab{flex:1;appearance:none;border:0;background:none;color:var(--muted);font:600 15px var(--font);padding:12px 4px;border-bottom:3px solid transparent;cursor:pointer}
+.tab[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--accent)}
+main .wrap{padding-block:16px 56px;display:flex;flex-direction:column;gap:18px}
+
+.daybar{display:flex;align-items:center;gap:8px}
+.when{flex:1;min-width:0;display:flex;flex-direction:column}
+.wd{font-weight:800;font-size:23px;line-height:1.1}
+.when input[type=date]{font:500 15px var(--font);color:var(--muted);background:none;border:0;padding:2px 0;max-width:100%}
+.iconbtn{appearance:none;width:46px;height:46px;border-radius:12px;border:1px solid var(--line);background:var(--surface);color:var(--ink);font-size:22px;cursor:pointer;flex:none}
+.iconbtn:disabled{opacity:.35}
+.pill{display:inline-flex;align-items:center;font:600 12px var(--font);padding:4px 10px;border-radius:999px;white-space:nowrap}
+.pill.draft{background:var(--warn-soft);color:var(--warn)}
+.pill.sent{background:var(--accent-soft);color:var(--accent)}
+.pill.none{color:var(--muted);border:1px solid var(--line)}
+.tag{display:inline-block;font:600 11px var(--font);letter-spacing:.03em;padding:2px 8px;border-radius:999px;background:var(--accent-soft);color:var(--accent);white-space:nowrap}
+
+.progress{display:flex;flex-direction:column;gap:6px}
+.progress .row{display:flex;justify-content:space-between;gap:8px;font-size:14px;color:var(--muted)}
+.bar{height:9px;border-radius:99px;background:var(--line);overflow:hidden}
+.bar i{display:block;height:100%;background:var(--accent);width:0;transition:width .25s}
+
+section{display:flex;flex-direction:column;gap:8px}
+h2{font-weight:700;font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:6px 0 0}
+.list{background:var(--surface);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+.item{border-top:1px solid var(--line);padding:10px 12px;display:flex;flex-direction:column;gap:8px}
+.item:first-child{border-top:0}
+.item .main{display:flex;align-items:center;gap:10px}
+.item label.check{display:flex;align-items:center;gap:12px;flex:1;min-width:0;cursor:pointer;min-height:44px}
+.item input[type=checkbox]{width:28px;height:28px;accent-color:var(--accent);flex:none}
+.txt{min-width:0;display:flex;flex-direction:column;gap:1px}
+.time{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums;display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.name{font-weight:500}
+.item.done .name{color:var(--muted);text-decoration:line-through}
+.small{appearance:none;border:1px solid var(--line);background:none;color:var(--muted);font:500 13px var(--font);border-radius:9px;padding:8px 10px;cursor:pointer;flex:none}
+.small.has{color:var(--warn);border-color:var(--warn)}
+.small.danger{color:var(--danger);border-color:var(--danger)}
+textarea,input[type=text],input[type=tel],input[type=time],input[type=password],select{width:100%;font:16px var(--font);color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:10px 11px}
+textarea{min-height:68px;resize:vertical}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+.trip{border-top:1px solid var(--line);padding:12px;display:flex;flex-direction:column;gap:4px}
+.trip:first-child{border-top:0}
+.t1{display:flex;justify-content:space-between;gap:8px;align-items:baseline}
+.hrs{font-weight:700;font-variant-numeric:tabular-nums}
+.meta{font-size:14px;color:var(--muted)}
+.note{color:var(--warn)}
+.acts{display:flex;gap:8px;margin-top:4px;flex-wrap:wrap}
+.empty{padding:14px 12px;color:var(--muted);font-size:15px}
+.form{background:var(--surface);border:1.5px solid var(--accent);border-radius:14px;padding:12px;display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.form .full{grid-column:1/-1}
+.form label,.field{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--muted);font-weight:500;min-width:0}
+.form .btns{grid-column:1/-1;display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap}
+.form .err{grid-column:1/-1;color:var(--danger);font-size:14px}
+.form label.inline,.inline{display:flex;flex-direction:row;align-items:center;gap:8px;font-size:15px;color:var(--ink);font-weight:500;cursor:pointer}
+.inline input{width:22px;height:22px;accent-color:var(--accent)}
+
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chip{appearance:none;border:1px solid var(--line);border-radius:999px;padding:8px 13px;font:600 14px var(--font);background:var(--surface);color:var(--muted);cursor:pointer;min-height:40px;user-select:none}
+.chip[aria-pressed="true"],.chip.on{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.chip input{position:absolute;opacity:0;width:1px;height:1px}
+label.chip{position:relative;display:inline-flex;align-items:center}
+.seg{display:flex;border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.seg button{flex:1;appearance:none;border:0;background:var(--surface);color:var(--muted);font:600 14px var(--font);padding:10px 6px;cursor:pointer;min-height:44px}
+.seg button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink)}
+.rrow{appearance:none;width:100%;text-align:left;background:none;border:0;border-top:1px solid var(--line);color:var(--ink);font:inherit;padding:12px;display:flex;gap:10px;align-items:center;cursor:pointer}
+.rrow:first-child{border-top:0}
+.rrow .go{color:var(--muted);font-size:20px}
+
+.btn{appearance:none;border:1px solid var(--line);background:var(--surface);color:var(--ink);font:600 15px var(--font);border-radius:12px;padding:11px 16px;cursor:pointer;min-height:46px}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.btn.ghost{background:none}
+.btn.danger{color:var(--danger);border-color:var(--danger);background:none}
+.btn.block{width:100%}
+.btn.big{min-height:58px;font-size:17px}
+.addrow{display:flex;gap:8px}
+.addrow input{flex:1;min-width:0}
+.callout{border-radius:14px;padding:12px 14px;display:flex;flex-direction:column;gap:10px;font-size:15px}
+.callout.warn{background:var(--warn-soft);border:1px solid var(--warn)}
+.callout.ok{background:var(--accent-soft);border:1px solid var(--accent)}
+.callout.info{background:var(--surface);border:1px dashed var(--line);color:var(--muted)}
+.callout ul{margin:0;padding-left:20px}
+.btns{display:flex;gap:8px;flex-wrap:wrap}
+fieldset{border:0;margin:0;padding:0;min-width:0;display:flex;flex-direction:column;gap:18px}
+
+.hcard{background:var(--surface);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+.hcard>button{appearance:none;width:100%;text-align:left;background:none;border:0;color:var(--ink);padding:12px 14px;display:flex;gap:10px;align-items:center;cursor:pointer;font:inherit}
+.hd{flex:1;min-width:0;display:flex;flex-direction:column}
+.hd b{font-weight:700}
+.hd span{font-size:14px;color:var(--muted)}
+.hbody{border-top:1px solid var(--line);padding:12px 14px;display:flex;flex-direction:column;gap:10px;font-size:15px}
+.hbody h3{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:0}
+.hbody ul{margin:0;padding-left:20px}
+.miss{color:var(--danger)}
+.settings{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:14px}
+.hint{font-size:13px;color:var(--muted)}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(24px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--bg);padding:11px 16px;border-radius:12px;font-weight:500;z-index:20;max-width:90vw}
+@media (max-width:360px){.tab{font-size:14px}}
+@media (prefers-reduced-motion:reduce){.bar i{transition:none}}
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <div class="brand"><h1>Rotina do Caseiro</h1><span class="shift">Seg a sex · 7h às 16h</span></div>
+    <div class="tabs" role="tablist">
+      <button class="tab" id="tab-dia" role="tab" aria-selected="true">Dia</button>
+      <button class="tab" id="tab-hist" role="tab" aria-selected="false">Histórico</button>
+      <button class="tab" id="tab-rot" role="tab" aria-selected="false">Rotina</button>
+      <button class="tab" id="tab-cfg" role="tab" aria-selected="false">Ajustes</button>
+    </div>
+  </div>
+</header>
+<main>
+  <div class="wrap" id="view-dia"></div>
+  <div class="wrap" id="view-hist" hidden></div>
+  <div class="wrap" id="view-rot" hidden></div>
+  <div class="wrap" id="view-cfg" hidden></div>
+</main>
+
+<script src="vendor/jspdf.umd.min.js"></script>
+<script src="vendor/jspdf.plugin.autotable.min.js"></script>
+<script>
+(function(){
+"use strict";
+/* ============ Rotina inicial (usada na primeira vez e em "Restaurar") ============
+   dias: 1=segunda ... 5=sexta. freq: "fixa" (dias da semana) ou "extra" (quando necessário).
+   Sem início/fim: aparece o texto de "nota" (ex.: "Durante o dia").                       */
+const TIPOS=["Cachorros","Carros","Limpeza","Jardim","Piscina","Motorista","Manutenção","Outros"];
+const ROTINA_PADRAO=[
+  {id:"cach-m-cedo",nome:"Cachorros (manhã)",tipo:"Cachorros",freq:"fixa",dias:[1,4],inicio:"07:00",fim:"07:20"},
+  {id:"cach-m",nome:"Cachorros (manhã)",tipo:"Cachorros",freq:"fixa",dias:[2,3,5],inicio:"07:00",fim:"07:30"},
+  {id:"luiza",nome:"Motorista – Dona Luiza",tipo:"Motorista",freq:"fixa",dias:[1,4],inicio:"07:45",fim:"09:30"},
+  {id:"piscina",nome:"Piscina + porão",tipo:"Piscina",freq:"fixa",dias:[1,3,5],inicio:"10:00",fim:"11:00"},
+  {id:"telhado",nome:"Varrer telhado",tipo:"Limpeza",freq:"fixa",dias:[1],inicio:"11:00",fim:"13:00"},
+  {id:"carros",nome:"Lavar carros (4)",tipo:"Carros",freq:"fixa",dias:[1,2,3,4],inicio:"14:00",fim:"15:00"},
+  {id:"garagem",nome:"Lavar garagem e calçada",tipo:"Limpeza",freq:"fixa",dias:[5],inicio:"14:00",fim:"16:00"},
+  {id:"portao",nome:"Portão e trilhos",tipo:"Limpeza",freq:"fixa",dias:[5],nota:"Junto com a garagem"},
+  {id:"gerador",nome:"Limpar gerador",tipo:"Manutenção",freq:"fixa",dias:[5],nota:"Junto com a garagem"},
+  {id:"plantas",nome:"Regar plantas (frente)",tipo:"Jardim",freq:"fixa",dias:[5],nota:"Junto com a garagem"},
+  {id:"cach-t",nome:"Cachorros (tarde)",tipo:"Cachorros",freq:"fixa",dias:[1,2,3,4,5],inicio:"15:00",fim:"15:30"},
+  {id:"guarita",nome:"Guarita e banheiro",tipo:"Limpeza",freq:"fixa",dias:[1,2,3,4,5],nota:"Durante o dia"},
+  {id:"gramados",nome:"Limpar gramados (sujeira dos cachorros)",tipo:"Jardim",freq:"fixa",dias:[1,2,3,4,5],nota:"Durante o dia"},
+  {id:"deck",nome:"Lavar deck",tipo:"Limpeza",freq:"extra",dias:[],nota:"1x por semana, até 11:00"},
+  {id:"elisa",nome:"Lavar carro da Elisa",tipo:"Carros",freq:"extra",dias:[],nota:"Quando ela pedir"},
+  {id:"armarios",nome:"Armários da garagem",tipo:"Limpeza",freq:"extra",dias:[],nota:"A cada 15 dias"},
+  {id:"bicicletas",nome:"Bicicletas",tipo:"Manutenção",freq:"extra",dias:[],nota:"1x por mês"},
+  {id:"zafira",nome:"Câmbio da Zafira",tipo:"Carros",freq:"extra",dias:[],nota:"Pendente"}
+];
+/* ================================================================================== */
+
+const WD=["Domingo","Segunda","Terça","Quarta","Quinta","Sexta","Sábado"], WDS=["Dom","Seg","Ter","Qua","Qui","Sex","Sáb"];
+const K_REP="rotina.v1.relatorios", K_CFG="rotina.v1.config", K_ROT="rotina.v2.atividades", KEEP_DAYS=180;
+
+function load(k,def){try{const v=localStorage.getItem(k);return v?JSON.parse(v):def}catch(_){return def}}
+function store(k,v){try{localStorage.setItem(k,JSON.stringify(v));return true}catch(_){return false}}
+let reports=load(K_REP,{}), cfg=Object.assign({nome:"Paulino",destinatario:"Mario",whats:"",senha:""},load(K_CFG,{}));
+let rotina=load(K_ROT,null); if(!Array.isArray(rotina))rotina=JSON.parse(JSON.stringify(ROTINA_PADRAO));
+let date=todayStr(), draft=null, openNotes=new Set(), tripForm=null, confirmSend=false, lastPdf=null, openHist=new Set();
+let rotFiltro=null, rotEdit=null, rotErr="", rotUnlocked=false, installEvt=null;
+
+const $=s=>document.querySelector(s);
+function h(tag,attrs,...kids){const e=document.createElement(tag);if(attrs)for(const k in attrs){const v=attrs[k];if(v==null||v===false)continue;if(k.startsWith("on"))e.addEventListener(k.slice(2),v);else if(k==="class")e.className=v;else if(k==="style")e.style.cssText=v;else if(["value","checked","disabled","hidden"].includes(k))e[k]=v;else e.setAttribute(k,v===true?"":v)}for(const c of kids.flat()){if(c==null||c===false)continue;e.append(c instanceof Node?c:document.createTextNode(String(c)))}return e}
+function pad(n){return String(n).padStart(2,"0")}
+function fmt(d){return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate())}
+function todayStr(){return fmt(new Date())}
+function parse(s){const[y,m,d]=s.split("-").map(Number);return new Date(y,m-1,d)}
+function br(s){const d=parse(s);return pad(d.getDate())+"/"+pad(d.getMonth()+1)+"/"+d.getFullYear()}
+function wd(s){return parse(s).getDay()}
+function hhmm(iso){if(!iso)return"";const d=new Date(iso);return pad(d.getHours())+":"+pad(d.getMinutes())}
+function clone(o){return JSON.parse(JSON.stringify(o))}
+function rid(){return Math.random().toString(36).slice(2,9)}
+function toast(m){const t=h("div",{class:"toast",role:"status"},m);document.body.append(t);setTimeout(()=>t.remove(),2600)}
+function isWeekday(n){return n>=1&&n<=5}
+
+/* ---------------- Rotina → tarefas do dia ---------------- */
+function horaLabel(a){if(a.inicio)return a.fim?a.inicio+"–"+a.fim:"A partir de "+a.inicio;return a.nota||(a.freq==="extra"?"Quando necessário":"Durante o dia")}
+function ordem(a){return a.inicio||"99:99"}
+function atividadesDoDia(w){return rotina.map((a,i)=>[a,i]).filter(([a])=>a.freq!=="extra"&&(a.dias||[]).includes(w)).sort((x,y)=>ordem(x[0]).localeCompare(ordem(y[0]))||x[1]-y[1]).map(x=>x[0])}
+function extrasRot(){return rotina.filter(a=>a.freq==="extra")}
+function tarefasPara(ds){return atividadesDoDia(wd(ds)).map(a=>({id:a.id,hora:horaLabel(a),nome:a.nome,tipo:a.tipo||"",feito:false,obs:""}))}
+function extrasPara(){return extrasRot().map(a=>({id:a.id,nome:a.nome,tipo:a.tipo||"",freq:horaLabel(a),feito:false,obs:""}))}
+function merge(novas,antigas){
+  const usadas=new Set();
+  const out=novas.map(n=>{const o=antigas.find(x=>!usadas.has(x)&&x.id===n.id)||antigas.find(x=>!usadas.has(x)&&x.nome===n.nome);if(o){usadas.add(o);return Object.assign(n,{feito:!!o.feito,obs:o.obs||""})}return n});
+  antigas.forEach(o=>{if(!usadas.has(o)&&(o.feito||o.obs||o.custom))out.push(o)});   // não perde o que já foi marcado
+  return out}
+function newDraft(ds){return{data:ds,status:"rascunho",tarefas:tarefasPara(ds),extras:extrasPara(),viagens:[],obsGeral:""}}
+function loadDraft(){
+  if(!reports[date]){draft=newDraft(date);return}
+  draft=clone(reports[date]);
+  // O dia de hoje ainda não enviado acompanha as mudanças da rotina; dias passados ficam como foram.
+  if(date===todayStr()&&draft.status!=="enviado"){draft.tarefas=merge(tarefasPara(date),draft.tarefas||[]);draft.extras=merge(extrasPara(),draft.extras||[])}
+}
+function save(){draft.atualizadoEm=new Date().toISOString();reports[draft.data]=clone(draft);
+  const cut=fmt(new Date(Date.now()-KEEP_DAYS*864e5));for(const k in reports)if(k<cut)delete reports[k];
+  if(!store(K_REP,reports))toast("Não foi possível salvar no celular. Libere espaço.")}
+let saveT=null;function changed(){clearTimeout(saveT);saveT=setTimeout(save,400)}
+function locked(){return draft.status==="enviado"}
+
+/* ---------------- Dia ---------------- */
+function stepDay(dir){const d=parse(date);do{d.setDate(d.getDate()+dir)}while(d.getDay()===0||d.getDay()===6);const s=fmt(d);if(s>todayStr())return;goDate(s)}
+function goDate(s){clearTimeout(saveT);if(reports[date]||draftTouched())save();date=s;openNotes.clear();tripForm=null;confirmSend=false;lastPdf=null;loadDraft();renderDay();window.scrollTo(0,0)}
+function draftTouched(){return draft&&(draft.tarefas.some(t=>t.feito||t.obs)||draft.viagens.length||draft.obsGeral||draft.extras.some(e=>e.feito||e.obs))}
+function pill(r){if(!r)return h("span",{class:"pill none"},"Não iniciado");return r.status==="enviado"?h("span",{class:"pill sent"},"Enviado "+hhmm(r.enviadoEm)):h("span",{class:"pill draft"},"Em andamento")}
+
+function renderDay(){
+  const v=$("#view-dia");v.textContent="";
+  const w=wd(date);
+  if(!isStandalone())v.append(installCard());
+  v.append(h("div",{class:"daybar"},
+    h("button",{class:"iconbtn","aria-label":"Dia anterior",onclick:()=>stepDay(-1)},"‹"),
+    h("div",{class:"when"},h("span",{class:"wd"},WD[w]),h("input",{type:"date",id:"datepick",value:date,max:todayStr(),"aria-label":"Escolher data",onchange:e=>{if(e.target.value&&e.target.value<=todayStr())goDate(e.target.value)}})),
+    pill(reports[date]),
+    h("button",{class:"iconbtn","aria-label":"Próximo dia",disabled:date>=todayStr(),onclick:()=>stepDay(1)},"›")));
+  if(!isWeekday(w)){v.append(h("div",{class:"callout info"},"Sábado e domingo são folga. Escolha um dia de segunda a sexta."));return}
+
+  const done=draft.tarefas.filter(t=>t.feito).length,total=draft.tarefas.length;
+  v.append(h("div",{class:"progress"},h("div",{class:"row"},h("span",{id:"prog"},done+" de "+total+" tarefas feitas")),h("div",{class:"bar"},h("i",{style:"width:"+(total?Math.round(done/total*100):0)+"%"}))));
+
+  if(locked()){
+    v.append(h("div",{class:"callout ok"},
+      h("div",null,h("strong",null,"Relatório enviado às "+hhmm(draft.enviadoEm)+".")," Para mudar algo, reabra, corrija e envie de novo."),
+      h("div",{class:"btns"},h("button",{class:"btn primary",onclick:()=>sharePdf(draft,false)},"Enviar PDF de novo"),h("button",{class:"btn",onclick:()=>{draft.status="rascunho";delete draft.enviadoEm;save();loadDraft();renderDay()}},"Reabrir para corrigir"))));
+  }
+  if(lastPdf)v.append(fallbackCard());
+
+  const fs=h("fieldset",{disabled:locked()});
+  const tl0=h("div",{class:"list"});
+  if(!total)tl0.append(h("div",{class:"empty"},"Nenhuma atividade fixa para "+WD[w].toLowerCase()+". Inclua na aba Rotina."));
+  draft.tarefas.forEach(t=>tl0.append(itemRow(t,t.hora,false)));
+  fs.append(h("section",null,h("h2",null,"Tarefas do dia"),tl0));
+
+  const ts=h("section",null,h("h2",null,"Saídas de motorista"));const tl=h("div",{class:"list"});
+  if(!draft.viagens.length&&!tripForm)tl.append(h("div",{class:"empty"},"Nenhuma saída registrada. Toque em “Registrar saída” para anotar quem levou, para onde e o horário."));
+  sortTrips(draft.viagens).forEach(tr=>{if(tripForm&&tripForm.id===tr.id)return;
+    tl.append(h("div",{class:"trip"},
+      h("div",{class:"t1"},h("span",{class:"hrs"},(tr.saida||"--:--")+" → "+(tr.retorno||"sem retorno")),h("span",{class:"meta"},tr.veiculo||"")),
+      h("div",{class:"name"},(tr.passageiro||"Sem passageiro")+(tr.destino?" · "+tr.destino:"")),
+      tr.obs?h("div",{class:"meta note"},tr.obs):null,
+      h("div",{class:"acts"},h("button",{class:"small",type:"button",onclick:()=>{tripForm=clone(tr);renderDay()}},"Editar"),
+        h("button",{class:"small danger",type:"button",onclick:e=>{if(e.currentTarget.dataset.c){draft.viagens=draft.viagens.filter(x=>x.id!==tr.id);changed();renderDay()}else{e.currentTarget.dataset.c="1";e.currentTarget.textContent="Toque de novo para excluir"}}},"Excluir"))))});
+  if(tl.childNodes.length)ts.append(tl);
+  ts.append(tripForm?tripFormEl():h("button",{class:"btn block",type:"button",onclick:()=>{const n=new Date();tripForm={id:null,saida:pad(n.getHours())+":"+pad(n.getMinutes()),retorno:"",passageiro:"",destino:"",veiculo:"",obs:""};renderDay();const p=$("#tf-pass");p&&p.focus()}},"+ Registrar saída"));
+  fs.append(ts);
+
+  const exl=h("div",{class:"list"});draft.extras.forEach(e=>exl.append(itemRow(e,e.freq,true)));
+  fs.append(h("section",null,h("h2",null,"Atividades extras de hoje"),draft.extras.length?exl:null,
+    h("div",{class:"addrow"},h("input",{type:"text",id:"newextra",placeholder:"Outra atividade feita hoje",maxlength:"120",onkeydown:e=>{if(e.key==="Enter"){e.preventDefault();addExtra()}}}),h("button",{class:"btn",type:"button",onclick:addExtra},"Adicionar"))));
+  fs.append(h("section",null,h("h2",null,"Observações do dia"),h("textarea",{id:"obsgeral",placeholder:"Mudanças, imprevistos, algo que precisa ser avisado…",value:draft.obsGeral||"",oninput:e=>{draft.obsGeral=e.target.value;changed()}})));
+  v.append(fs);
+
+  if(!locked()){
+    const pend=draft.tarefas.filter(t=>!t.feito);
+    if(confirmSend){
+      v.append(h("div",{class:"callout warn",id:"confirm"},h("strong",null,pend.length+" tarefa"+(pend.length>1?"s":"")+" sem marcar:"),
+        h("ul",null,pend.map(t=>h("li",null,t.nome+(t.obs?" — "+t.obs:" (sem observação)")))),
+        h("span",null,"Se alguma não foi feita, explique na observação dela."),
+        h("div",{class:"btns"},h("button",{class:"btn primary",id:"send-anyway",onclick:()=>sharePdf(draft,true)},"Enviar assim mesmo"),h("button",{class:"btn ghost",onclick:()=>{confirmSend=false;renderDay()}},"Voltar"))));
+    }else v.append(h("button",{class:"btn primary block big",id:"send",onclick:()=>{if(pend.length){confirmSend=true;renderDay();$("#confirm").scrollIntoView({behavior:"smooth",block:"center"})}else sharePdf(draft,true)}},"Enviar relatório pelo WhatsApp"));
+  }
+}
+function itemRow(t,sub,isExtra){
+  const open=openNotes.has(t.id)||!!t.obs;const row=h("div",{class:"item"+(t.feito?" done":"")});
+  row.append(h("div",{class:"main"},
+    h("label",{class:"check",for:"cb-"+t.id},h("input",{type:"checkbox",id:"cb-"+t.id,checked:!!t.feito,onchange:e=>{t.feito=e.target.checked;row.classList.toggle("done",t.feito);changed();updProg()}}),
+      h("span",{class:"txt"},h("span",{class:"time"},sub||"",t.tipo?h("span",{class:"tag"},t.tipo):null),h("span",{class:"name"},t.nome))),
+    h("button",{class:"small"+(t.obs?" has":""),type:"button",onclick:()=>{openNotes.has(t.id)?openNotes.delete(t.id):openNotes.add(t.id);renderDay();const ta=document.getElementById("ob-"+t.id);ta&&ta.focus()}},t.obs?"Obs.":"+ Obs."),
+    isExtra&&t.custom?h("button",{class:"small",type:"button","aria-label":"Remover",onclick:()=>{draft.extras=draft.extras.filter(x=>x!==t);changed();renderDay()}},"×"):null));
+  if(open)row.append(h("textarea",{id:"ob-"+t.id,placeholder:"O que mudou? (ex.: não deu tempo, feito em outro horário…)",value:t.obs||"",oninput:e=>{t.obs=e.target.value;changed()}}));
+  return row}
+function updProg(){const d=draft.tarefas.filter(t=>t.feito).length,t=draft.tarefas.length;$("#prog").textContent=d+" de "+t+" tarefas feitas";$(".bar i").style.width=(t?Math.round(d/t*100):0)+"%"}
+function addExtra(){const i=$("#newextra"),v=(i.value||"").trim();if(!v)return;draft.extras.push({id:"x"+rid(),nome:v,tipo:"",freq:"Adicionada hoje",feito:true,obs:"",custom:true});changed();renderDay()}
+function sortTrips(a){return(a||[]).slice().sort((x,y)=>(x.saida||"").localeCompare(y.saida||""))}
+function carList(){const s=new Set(["Zafira"]);Object.values(reports).forEach(r=>(r.viagens||[]).forEach(t=>t.veiculo&&s.add(t.veiculo)));return[...s]}
+function tripFormEl(){const f=tripForm;const inp=(id,k,a)=>h("input",Object.assign({id,value:f[k]||"",oninput:e=>{f[k]=e.target.value}},a));
+  return h("form",{class:"form",onsubmit:e=>{e.preventDefault();if(!f.saida){toast("Informe o horário de saída");return}
+      const rec={id:f.id||"v"+rid(),saida:f.saida,retorno:f.retorno||"",passageiro:(f.passageiro||"").trim(),destino:(f.destino||"").trim(),veiculo:(f.veiculo||"").trim(),obs:(f.obs||"").trim()};
+      const i=draft.viagens.findIndex(x=>x.id===rec.id);i>=0?draft.viagens[i]=rec:draft.viagens.push(rec);tripForm=null;save();renderDay();toast("Saída registrada")}},
+    h("label",null,"Saída",inp("tf-saida","saida",{type:"time",required:true})),
+    h("label",null,"Retorno",inp("tf-ret","retorno",{type:"time"})),
+    h("label",{class:"full"},"Quem levou",inp("tf-pass","passageiro",{type:"text",placeholder:"Ex.: Dona Luiza",maxlength:"80"})),
+    h("label",{class:"full"},"Destino / motivo",inp("tf-dest","destino",{type:"text",placeholder:"Ex.: médico, mercado, aeroporto",maxlength:"120"})),
+    h("label",{class:"full"},"Carro",inp("tf-car","veiculo",{type:"text",placeholder:"Ex.: Zafira",maxlength:"40",list:"carros"})),
+    h("datalist",{id:"carros"},carList().map(c=>h("option",{value:c}))),
+    h("label",{class:"full"},"Observação",h("textarea",{id:"tf-obs",value:f.obs||"",placeholder:"Trânsito, espera, abastecimento…",oninput:e=>{f.obs=e.target.value}})),
+    h("div",{class:"btns"},h("button",{class:"btn ghost",type:"button",onclick:()=>{tripForm=null;renderDay()}},"Cancelar"),h("button",{class:"btn primary",type:"submit"},f.id?"Salvar":"Registrar")))}
+
+/* ---------------- Rotina (editar atividades) ---------------- */
+function diasLabel(d){d=(d||[]).slice().sort();if(d.join()==="1,2,3,4,5")return"Seg a sex";return d.map(n=>WDS[n]).join(", ")||"Nenhum dia"}
+function renderRot(){
+  const v=$("#view-rot");v.textContent="";
+  if(cfg.senha&&!rotUnlocked){
+    const inp=h("input",{type:"password",id:"rot-pin",inputmode:"numeric",autocomplete:"off",placeholder:"Senha"});
+    const go=()=>{if(inp.value===cfg.senha){rotUnlocked=true;renderRot()}else{toast("Senha incorreta");inp.value="";inp.focus()}};
+    inp.addEventListener("keydown",e=>{if(e.key==="Enter")go()});
+    v.append(h("h2",null,"Rotina"),h("div",{class:"settings"},h("strong",null,"Rotina protegida"),h("span",{class:"hint"},"Digite a senha para alterar as atividades."),inp,h("button",{class:"btn primary",onclick:go},"Desbloquear")));
+    return}
+  if(rotFiltro==null){const w=new Date().getDay();rotFiltro=isWeekday(w)?w:1}
+  v.append(h("h2",null,"Atividades da rotina"),
+    h("div",{class:"chips",role:"group","aria-label":"Mostrar"},
+      [1,2,3,4,5].map(n=>h("button",{class:"chip","aria-pressed":String(rotFiltro===n),onclick:()=>{rotFiltro=n;rotEdit=null;renderRot()}},WDS[n])),
+      h("button",{class:"chip","aria-pressed":String(rotFiltro==="extra"),onclick:()=>{rotFiltro="extra";rotEdit=null;renderRot()}},"Extras"),
+      h("button",{class:"chip","aria-pressed":String(rotFiltro==="todas"),onclick:()=>{rotFiltro="todas";rotEdit=null;renderRot()}},"Todas")));
+  let lista;
+  if(rotFiltro==="extra")lista=extrasRot();
+  else if(rotFiltro==="todas")lista=rotina.slice().sort((a,b)=>(a.freq==="extra")-(b.freq==="extra")||ordem(a).localeCompare(ordem(b)));
+  else lista=atividadesDoDia(rotFiltro);
+  const box=h("div",{class:"list"});
+  if(rotEdit&&!rotEdit.id)box.append(rotFormEl());
+  if(!lista.length&&!(rotEdit&&!rotEdit.id))box.append(h("div",{class:"empty"},rotFiltro==="extra"?"Nenhuma atividade extra. Toque em “Nova atividade” para incluir.":"Nenhuma atividade neste dia."));
+  lista.forEach(a=>{
+    if(rotEdit&&rotEdit.id===a.id){box.append(rotFormEl());return}
+    box.append(h("button",{class:"rrow",onclick:()=>{rotEdit=clone(a);rotErr="";renderRot()}},
+      h("span",{class:"txt",style:"flex:1"},h("span",{class:"time"},horaLabel(a),h("span",{class:"tag"},a.tipo||"Outros")),h("span",{class:"name"},a.nome),
+        h("span",{class:"meta"},a.freq==="extra"?"Extra — aparece todo dia como opcional":diasLabel(a.dias))),
+      h("span",{class:"go","aria-hidden":"true"},"›")))});
+  v.append(box);
+  if(!rotEdit)v.append(h("button",{class:"btn primary block",onclick:()=>{rotEdit={id:null,nome:"",tipo:"Limpeza",freq:rotFiltro==="extra"?"extra":"fixa",dias:typeof rotFiltro==="number"?[rotFiltro]:[],inicio:"",fim:"",nota:""};rotErr="";renderRot();const n=$("#ra-nome");n&&n.focus()}},"+ Nova atividade"));
+  v.append(h("div",{class:"callout info"},"As mudanças valem para hoje (se o relatório ainda não foi enviado) e para os próximos dias. Relatórios de dias anteriores não mudam."),
+    h("button",{class:"btn danger",onclick:e=>{if(e.currentTarget.dataset.c){rotina=clone(ROTINA_PADRAO);persistRot();toast("Rotina original restaurada")}else{e.currentTarget.dataset.c="1";e.currentTarget.textContent="Toque de novo para restaurar a rotina original"}}},"Restaurar rotina original"));
+}
+function rotFormEl(){
+  const f=rotEdit, novo=!f.id;
+  const fixa=f.freq!=="extra", semHora=!f.inicio&&!f.fim&&f._semHora!==false&&!novo||f._semHora===true;
+  const form=h("form",{class:"form",style:"margin:8px;",onsubmit:e=>{e.preventDefault();saveRot()}});
+  form.append(
+    h("label",{class:"full"},"Nome da atividade",h("input",{type:"text",id:"ra-nome",value:f.nome,maxlength:"80",placeholder:"Ex.: Limpar calhas",oninput:e=>{f.nome=e.target.value}})),
+    h("label",{class:"full"},"Tipo",h("select",{id:"ra-tipo",onchange:e=>{f.tipo=e.target.value}},TIPOS.map(t=>{const o=h("option",{value:t},t);if(t===(f.tipo||"Outros"))o.selected=true;return o}))),
+    h("div",{class:"full field"},"Frequência",h("div",{class:"seg"},
+      h("button",{type:"button","aria-pressed":String(fixa),onclick:()=>{f.freq="fixa";renderRot()}},"Dias fixos"),
+      h("button",{type:"button","aria-pressed":String(!fixa),onclick:()=>{f.freq="extra";renderRot()}},"Extra (quando precisar)"))));
+  if(fixa)form.append(h("div",{class:"full field"},"Dias da semana",h("div",{class:"chips"},[1,2,3,4,5].map(n=>{const on=(f.dias||[]).includes(n);
+    return h("label",{class:"chip"+(on?" on":"")},h("input",{type:"checkbox",checked:on,onchange:e=>{f.dias=(f.dias||[]).filter(x=>x!==n);if(e.target.checked)f.dias.push(n);f.dias.sort();e.target.parentNode.classList.toggle("on",e.target.checked)}}),WDS[n])}))));
+  form.append(h("label",{class:"inline full"},h("input",{type:"checkbox",id:"ra-semhora",checked:semHora,onchange:e=>{f._semHora=e.target.checked;if(e.target.checked){f.inicio="";f.fim=""}renderRot()}}),fixa?"Sem horário fixo":"Sem horário"));
+  if(!semHora)form.append(
+    h("label",null,"Início",h("input",{type:"time",id:"ra-ini",value:f.inicio||"",oninput:e=>{f.inicio=e.target.value}})),
+    h("label",null,"Fim",h("input",{type:"time",id:"ra-fim",value:f.fim||"",oninput:e=>{f.fim=e.target.value}})));
+  form.append(h("label",{class:"full"},fixa?(semHora?"Quando fazer":"Observação do horário (opcional)"):"Frequência / quando",h("input",{type:"text",id:"ra-nota",value:f.nota||"",maxlength:"60",placeholder:fixa?"Ex.: Durante o dia, Junto com a garagem":"Ex.: 1x por mês, Quando pedirem",oninput:e=>{f.nota=e.target.value}})));
+  if(rotErr)form.append(h("div",{class:"err",role:"alert"},rotErr));
+  form.append(h("div",{class:"btns"},
+    !novo?h("button",{class:"btn danger",type:"button",style:"margin-right:auto",onclick:e=>{if(e.currentTarget.dataset.c){rotina=rotina.filter(x=>x.id!==f.id);rotEdit=null;persistRot();toast("Atividade excluída")}else{e.currentTarget.dataset.c="1";e.currentTarget.textContent="Confirmar exclusão"}}},"Excluir"):null,
+    h("button",{class:"btn ghost",type:"button",onclick:()=>{rotEdit=null;rotErr="";renderRot()}},"Cancelar"),
+    h("button",{class:"btn primary",type:"submit"},novo?"Incluir":"Salvar")));
+  return form}
+function saveRot(){
+  const f=rotEdit;f.nome=(f.nome||"").trim();f.nota=(f.nota||"").trim();
+  if(!f.nome){rotErr="Escreva o nome da atividade.";renderRot();return}
+  if(f.freq!=="extra"&&!(f.dias||[]).length){rotErr="Escolha pelo menos um dia da semana.";renderRot();return}
+  if(f.fim&&!f.inicio){rotErr="Informe o horário de início.";renderRot();return}
+  if(f.inicio&&f.fim&&f.fim<=f.inicio){rotErr="O fim precisa ser depois do início.";renderRot();return}
+  const rec={id:f.id||"a"+rid(),nome:f.nome,tipo:f.tipo||"Outros",freq:f.freq==="extra"?"extra":"fixa",dias:f.freq==="extra"?[]:f.dias.slice().sort(),inicio:f.inicio||"",fim:f.fim||"",nota:f.nota};
+  const i=rotina.findIndex(x=>x.id===rec.id);if(i>=0)rotina[i]=rec;else rotina.push(rec);
+  if(rec.freq==="fixa"&&typeof rotFiltro==="number"&&!rec.dias.includes(rotFiltro))rotFiltro=rec.dias[0];
+  if(rec.freq==="extra"&&typeof rotFiltro==="number")rotFiltro="extra";
+  rotEdit=null;rotErr="";persistRot();toast(i>=0?"Atividade salva":"Atividade incluída")}
+function persistRot(){if(!store(K_ROT,rotina))toast("Não foi possível salvar a rotina.");
+  // atualiza o dia aberto, se for hoje e ainda não enviado
+  if(date===todayStr()&&(!draft||draft.status!=="enviado")){const keep=draft;draft=null;if(keep){draft=keep;draft.tarefas=merge(tarefasPara(date),keep.tarefas);draft.extras=merge(extrasPara(),keep.extras);if(reports[date])save()}else loadDraft()}
+  renderRot();renderDay()}
+
+/* ---------------- PDF ---------------- */
+function pdfName(r){return"Relatorio_"+(cfg.nome||"caseiro").replace(/[^\wÀ-ú]+/g,"_")+"_"+r.data+".pdf"}
+function makePdf(r){
+  const {jsPDF}=window.jspdf;const doc=new jsPDF({unit:"mm",format:"a4"});
+  const G=[30,106,80],W=210,M=14;let y;
+  const d=parse(r.data),t=r.tarefas||[],feitas=t.filter(x=>x.feito).length;
+  doc.setFillColor(...G);doc.rect(0,0,W,28,"F");
+  doc.setTextColor(255);doc.setFont("helvetica","bold");doc.setFontSize(17);doc.text("Relatório diário – Caseiro / Motorista",M,13);
+  doc.setFont("helvetica","normal");doc.setFontSize(11);doc.text(WD[d.getDay()]+", "+br(r.data)+"   ·   "+(cfg.nome||""),M,21);
+  doc.setTextColor(30);y=38;doc.setFontSize(10.5);
+  doc.text("Funcionário: "+(cfg.nome||"-"),M,y);doc.text("Para: "+(cfg.destinatario||"-"),W/2,y);y+=6;
+  doc.text("Gerado em: "+br(fmt(new Date()))+" às "+hhmm(new Date().toISOString()),M,y);doc.text("Expediente: 7h às 16h",W/2,y);y+=9;
+  const ok=feitas===t.length;doc.setFont("helvetica","bold");doc.setFontSize(13);doc.setTextColor(...(ok?G:[154,90,0]));
+  doc.text(feitas+" de "+t.length+" tarefas feitas"+(ok&&t.length?" — tudo concluído":""),M,y);doc.setTextColor(30);y+=4;
+  const base={margin:{left:M,right:M},styles:{fontSize:9.5,cellPadding:2.2,valign:"top",textColor:30},headStyles:{fillColor:G,textColor:255,fontStyle:"bold"},alternateRowStyles:{fillColor:[244,247,244]}};
+  const title=s=>{y+=7;doc.setFont("helvetica","bold");doc.setFontSize(11);doc.text(s,M,y);y+=2};
+  title("Tarefas do dia");
+  doc.autoTable(Object.assign({},base,{startY:y,columns:[{header:"Horário",dataKey:"h"},{header:"Atividade",dataKey:"a"},{header:"Tipo",dataKey:"t"},{header:"Status",dataKey:"s"},{header:"Observação",dataKey:"o"}],
+    body:t.map(x=>({h:x.hora,a:x.nome,t:x.tipo||"",s:x.feito?"Feito":"Não feito",o:x.obs||""})),
+    columnStyles:{h:{cellWidth:27},a:{cellWidth:50},t:{cellWidth:26},s:{cellWidth:20,fontStyle:"bold"}},
+    didParseCell:c=>{if(c.section==="body"&&c.column.dataKey==="s")c.cell.styles.textColor=c.cell.raw==="Feito"?G:[179,38,30]}}));
+  y=doc.lastAutoTable.finalY;
+  const v=sortTrips(r.viagens);title("Saídas de motorista ("+v.length+")");
+  if(v.length){doc.autoTable(Object.assign({},base,{startY:y,head:[["Saída","Retorno","Quem levou","Destino / motivo","Carro","Obs."]],
+    body:v.map(x=>[x.saida||"",x.retorno||"—",x.passageiro||"",x.destino||"",x.veiculo||"",x.obs||""]),columnStyles:{0:{cellWidth:16},1:{cellWidth:18}}}));y=doc.lastAutoTable.finalY}
+  else{y+=5;doc.setFont("helvetica","normal");doc.setFontSize(10);doc.text("Nenhuma saída registrada.",M,y)}
+  const e=(r.extras||[]).filter(x=>x.feito||x.obs);
+  if(e.length){title("Atividades extras");doc.autoTable(Object.assign({},base,{startY:y,head:[["Atividade","Tipo","Status","Observação"]],body:e.map(x=>[x.nome,x.tipo||"",x.feito?"Feito":"—",x.obs||""]),columnStyles:{0:{cellWidth:62},1:{cellWidth:24},2:{cellWidth:20}}}));y=doc.lastAutoTable.finalY}
+  title("Observações do dia");y+=4;doc.setFont("helvetica","normal");doc.setFontSize(10);
+  doc.splitTextToSize(r.obsGeral||"Sem observações.",W-2*M).forEach(l=>{if(y>282){doc.addPage();y=20}doc.text(l,M,y);y+=5});
+  const n=doc.getNumberOfPages();for(let i=1;i<=n;i++){doc.setPage(i);doc.setFontSize(8);doc.setTextColor(120);doc.text("Rotina do Caseiro · página "+i+" de "+n,W-M,292,{align:"right"})}
+  return doc.output("blob");
+}
+
+/* -------- Enviar: gera o PDF e abre o compartilhamento (WhatsApp) -------- */
+function sharePdf(r,markSent){
+  clearTimeout(saveT);
+  const was={status:r.status,enviadoEm:r.enviadoEm};
+  if(markSent){r.status="enviado";r.enviadoEm=new Date().toISOString()}
+  let blob;try{blob=makePdf(r)}catch(err){r.status=was.status;r.enviadoEm=was.enviadoEm;toast("Erro ao gerar o PDF.");console.error(err);return}
+  const name=pdfName(r),file=new File([blob],name,{type:"application/pdf"});
+  if(navigator.canShare&&navigator.canShare({files:[file]})){
+    navigator.share({files:[file],title:name}).then(()=>{lastPdf=null;confirmSend=false;save();renderDay();window.scrollTo(0,0);toast("Relatório enviado")})
+      .catch(err=>{if(markSent){r.status=was.status;r.enviadoEm=was.enviadoEm}
+        if(err&&err.name==="AbortError"){toast("Envio cancelado. Nada foi enviado.");save();renderDay()}else fallback(r,blob,name,markSent)});
+  }else fallback(r,blob,name,markSent);
+}
+function fallback(r,blob,name,markSent){
+  const url=URL.createObjectURL(blob);const a=h("a",{href:url,download:name});document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),60000);
+  if(markSent){r.status="enviado";r.enviadoEm=r.enviadoEm||new Date().toISOString()}
+  lastPdf={name};confirmSend=false;save();renderDay();window.scrollTo(0,0)}
+function fallbackCard(){
+  const phone=(cfg.whats||"").replace(/\D/g,"");
+  return h("div",{class:"callout warn"},h("strong",null,"PDF salvo no celular: "+lastPdf.name),
+    h("span",null,"Este celular não abriu o WhatsApp com o arquivo. Abra a conversa e anexe o PDF pela pasta Downloads (ou Arquivos, no iPhone)."),
+    phone?h("a",{class:"btn primary",href:"https://wa.me/"+phone,target:"_blank",rel:"noopener",style:"text-align:center;text-decoration:none"},"Abrir conversa no WhatsApp"):h("span",{class:"hint"},"Dica: cadastre o WhatsApp de quem recebe em Ajustes para ter um atalho aqui."),
+    h("button",{class:"btn ghost",onclick:()=>{lastPdf=null;renderDay()}},"Ok, entendi"))}
+
+/* ---------------- Histórico ---------------- */
+function renderHist(){
+  const v=$("#view-hist");v.textContent="";v.append(h("h2",null,"Relatórios guardados neste celular"));
+  const list=Object.values(reports).filter(r=>r&&r.data).sort((a,b)=>b.data.localeCompare(a.data));
+  if(!list.length){v.append(h("div",{class:"callout info"},"Nenhum relatório ainda. Cada dia preenchido aparece aqui, e dá para enviar o PDF de novo a qualquer momento."));return}
+  list.forEach(r=>{const t=r.tarefas||[],done=t.filter(x=>x.feito).length,open=openHist.has(r.data);const card=h("div",{class:"hcard"});
+    card.append(h("button",{"aria-expanded":String(open),onclick:()=>{open?openHist.delete(r.data):openHist.add(r.data);renderHist()}},
+      h("span",{class:"hd"},h("b",null,WDS[wd(r.data)]+", "+br(r.data)),h("span",null,done+"/"+t.length+" tarefas · "+(r.viagens||[]).length+" saída"+((r.viagens||[]).length===1?"":"s"))),pill(r)));
+    if(open){const b=h("div",{class:"hbody"}),pend=t.filter(x=>!x.feito);
+      b.append(h("h3",null,"Não feitas"),pend.length?h("ul",null,pend.map(x=>h("li",{class:"miss"},x.nome+(x.obs?" — "+x.obs:"")))):h("div",null,"Todas as tarefas foram marcadas."));
+      const vg=sortTrips(r.viagens);if(vg.length)b.append(h("h3",null,"Saídas de motorista"),h("ul",null,vg.map(x=>h("li",null,(x.saida||"")+(x.retorno?"–"+x.retorno:"")+" · "+(x.passageiro||"—")+(x.destino?" → "+x.destino:"")+(x.veiculo?" ("+x.veiculo+")":"")))));
+      if(r.obsGeral)b.append(h("h3",null,"Observações"),h("div",null,r.obsGeral));
+      b.append(h("div",{class:"btns"},h("button",{class:"btn primary",onclick:()=>sharePdf(reports[r.data],false)},"Enviar PDF"),h("button",{class:"btn",onclick:()=>{showTab("dia");goDate(r.data)}},"Abrir o dia")));
+      card.append(b)}
+    v.append(card)})}
+
+/* ---------------- Ajustes ---------------- */
+function renderCfg(){
+  const v=$("#view-cfg");v.textContent="";
+  const f=(lbl,key,attrs,hint)=>h("label",{class:"field"},lbl,h("input",Object.assign({id:"cfg-"+key,value:cfg[key]||"",oninput:e=>{cfg[key]=e.target.value;store(K_CFG,cfg)}},attrs)),hint?h("span",{class:"hint"},hint):null);
+  v.append(h("h2",null,"Ajustes"),h("div",{class:"settings"},
+    f("Nome do funcionário","nome",{type:"text",maxlength:"60"},"Aparece no PDF e no nome do arquivo."),
+    f("Quem recebe o relatório","destinatario",{type:"text",maxlength:"60"}),
+    f("WhatsApp de quem recebe (opcional)","whats",{type:"tel",placeholder:"55 11 99999-9999",inputmode:"tel"},"Com DDI 55 e DDD. Usado só como atalho quando o celular não consegue anexar o PDF sozinho."),
+    f("Senha para alterar a rotina (opcional)","senha",{type:"password",inputmode:"numeric",autocomplete:"new-password",maxlength:"12"},"Se preencher, a aba Rotina pede essa senha antes de qualquer mudança. Deixe em branco para não pedir.")));
+  v.append(h("div",{class:"callout info"},"Os relatórios e a rotina ficam guardados só neste celular (relatórios dos últimos "+KEEP_DAYS+" dias). Se o app for apagado, eles vão junto — os PDFs enviados continuam no WhatsApp."));
+  if(!isStandalone())v.append(installCard(true));
+}
+
+/* ---------------- Instalação ---------------- */
+function isStandalone(){return window.matchMedia("(display-mode: standalone)").matches||navigator.standalone===true}
+function isIOS(){return/iphone|ipad|ipod/i.test(navigator.userAgent)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1)}
+function installCard(force){
+  let dismissed=false;try{dismissed=localStorage.getItem("rotina.v1.hideInstall")==="1"}catch(_){}
+  if(dismissed&&!force)return null;
+  const c=h("div",{class:"callout ok"},h("strong",null,"Instale o app no celular"));
+  if(installEvt)c.append(h("span",null,"Fica com ícone na tela inicial e funciona sem internet."),h("div",{class:"btns"},h("button",{class:"btn primary",onclick:async()=>{installEvt.prompt();await installEvt.userChoice;installEvt=null;renderDay();renderCfg()}},"Instalar app")));
+  else if(isIOS())c.append(h("span",null,"No Safari, toque em Compartilhar (quadrado com seta) e depois em “Adicionar à Tela de Início”."));
+  else c.append(h("span",null,"No Chrome, abra o menu ⋮ e toque em “Instalar app” ou “Adicionar à tela inicial”."));
+  if(!force)c.append(h("button",{class:"btn ghost",onclick:()=>{try{localStorage.setItem("rotina.v1.hideInstall","1")}catch(_){}renderDay()}},"Agora não"));
+  return c}
+window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();installEvt=e;renderDay();renderCfg()});
+
+/* ---------------- Abas e início ---------------- */
+function showTab(n){["dia","hist","rot","cfg"].forEach(k=>{$("#tab-"+k).setAttribute("aria-selected",String(k===n));$("#view-"+k).hidden=k!==n});
+  if(n==="hist")renderHist();if(n==="rot"){rotEdit=null;renderRot()}if(n==="cfg")renderCfg();if(n!=="rot")rotUnlocked=false;window.scrollTo(0,0)}
+["dia","hist","rot","cfg"].forEach(k=>{$("#tab-"+k).onclick=()=>showTab(k)});
+document.addEventListener("visibilitychange",()=>{if(document.hidden){clearTimeout(saveT);if(reports[date]||draftTouched())save()}else if(date!==todayStr()&&isWeekday(wd(todayStr()))&&!draftTouched()){goDate(todayStr())}});
+if(!isWeekday(wd(date))){const d=parse(date);while(!isWeekday(d.getDay()))d.setDate(d.getDate()-1);date=fmt(d)}
+loadDraft();renderDay();renderCfg();
+if(navigator.storage&&navigator.storage.persist)navigator.storage.persist().catch(()=>{});
+if("serviceWorker" in navigator&&location.protocol!=="file:")navigator.serviceWorker.register("sw.js").catch(()=>{});
+})();
+</script>
+</body>
+</html>

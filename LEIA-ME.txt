@@ -1,0 +1,81 @@
+ROTINA DO CASEIRO — app para celular (Android e iPhone)
+=======================================================
+
+O que o app faz
+- Mostra as tarefas de cada dia (seg a sex, 7h às 16h) para marcar como feitas, com observações.
+- Registra as saídas de motorista (horário, quem levou, destino, carro, observação).
+- No fim do dia, o botão "Enviar relatório pelo WhatsApp" gera um PDF e abre
+  o compartilhamento do celular: é só escolher WhatsApp e a conversa.
+- Funciona sem internet e sem conta. Os dados ficam guardados no próprio celular.
+
+
+1) PUBLICAR O APP (uma vez só, cerca de 5 minutos)
+---------------------------------------------------
+O celular só instala o app a partir de um endereço https. O jeito mais simples e gratuito:
+
+  a. Descompacte este .zip no computador (vai aparecer a pasta "rotina-app").
+  b. Entre em https://app.netlify.com/drop e crie uma conta grátis (e-mail ou Google).
+  c. Arraste a pasta "rotina-app" inteira para a página.
+  d. O Netlify gera um endereço, por exemplo: https://rotina-caseiro.netlify.app
+     (em "Site configuration > Change site name" dá para escolher o nome).
+  e. Mande esse endereço para o celular do Paulino.
+
+Alternativa: qualquer hospedagem com https (GitHub Pages, Vercel, o site da empresa).
+
+
+2) INSTALAR NO CELULAR
+----------------------
+Android (Chrome):
+  Abra o endereço no Chrome > aparece "Instalar app" (ou menu ⋮ > "Instalar app").
+  O ícone "Rotina" fica na tela inicial.
+
+iPhone (Safari — tem que ser o Safari):
+  Abra o endereço no Safari > botão Compartilhar (quadrado com seta)
+  > "Adicionar à Tela de Início" > Adicionar.
+
+Na primeira vez, abra a aba "Ajustes" e confira o nome do funcionário,
+o nome de quem recebe e (opcional) o WhatsApp de quem recebe.
+
+
+3) USO NO DIA A DIA
+-------------------
+- Marcar cada tarefa feita. Se algo mudou, tocar em "+ Obs." e escrever.
+- Saídas de motorista: "Registrar saída".
+- Fim do dia: "Enviar relatório pelo WhatsApp" > escolher WhatsApp > escolher a conversa > enviar.
+- Se enviar errado: "Reabrir para corrigir" e enviar de novo.
+- O "Histórico" guarda os últimos 180 dias e permite reenviar qualquer PDF.
+
+
+4) MUDAR A ROTINA (pelo próprio app)
+------------------------------------
+Aba "Rotina":
+  - Escolha o dia (Seg a Sex), "Extras" ou "Todas" para ver as atividades.
+  - Toque numa atividade para mudar nome, tipo, dias da semana e horário,
+    ou para excluir (toque em Excluir e confirme).
+  - "+ Nova atividade" inclui uma atividade nova.
+  - "Dias fixos" = aparece nos dias marcados. "Extra" = aparece todo dia como opcional.
+  - "Restaurar rotina original" volta para a rotina da anotação inicial.
+As mudanças valem para hoje (se ainda não foi enviado) e para os próximos dias.
+Relatórios de dias anteriores não mudam.
+
+Senha: em "Ajustes" dá para colocar uma senha. Com ela, a aba Rotina só deixa
+alterar depois de digitar a senha (o Paulino continua marcando e enviando normalmente).
+
+A rotina fica guardada no celular onde foi editada. Faça as mudanças no celular do Paulino.
+
+
+5) ATUALIZAR O APP (quando receber uma versão nova)
+---------------------------------------------------
+  - Arraste a pasta nova no Netlify, no mesmo site (aba "Deploys").
+  - O app no celular se atualiza sozinho na próxima vez que abrir com internet
+    (às vezes é preciso fechar e abrir o app duas vezes).
+  - Relatórios, rotina e ajustes já guardados no celular são mantidos.
+  - Se você mesmo editar os arquivos, troque o número em sw.js (rotina-v2 -> rotina-v3).
+
+
+Observações
+- O WhatsApp não permite que um app escolha a conversa e anexe o arquivo sozinho;
+  por isso o Paulino escolhe a conversa na hora de enviar (dois toques).
+- Se o celular for muito antigo e não oferecer o WhatsApp no compartilhamento,
+  o app salva o PDF em Downloads e mostra um atalho para abrir a conversa.
+- Apagar o app apaga o histórico do celular; os PDFs já enviados continuam no WhatsApp.
